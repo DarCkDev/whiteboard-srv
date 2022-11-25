@@ -33,10 +33,23 @@ io.on("connection", onConnection);
 function onConnection(socket) {
   socket.on("access", (args) => {
     socket.join(args.room);
-    users.push({ id: socket.id, ...args });
+    const user = { id: socket.id, ...args };
+    users.push(user);
+    const roomUsers = users.filter((u) => u.room === args.room);
+    socket.to(args.room).emit("userconnected", { user, users: roomUsers });
     socket.on("todraw", (data) => {
       socket.to(args.room).emit("todraw", data);
     });
+    console.log("Connected", args, socket.id);
+  });
+
+  socket.on("disconnect", () => {
+    const user = users.find((u) => u.id === socket.id);
+    if (user) {
+      users = users.filter((u) => u.id !== user.id);
+      const roomUsers = users.filter((u) => u.room === user.room);
+      socket.to(user.room).emit("userdisconect", { user, users: roomUsers });
+    }
   });
 }
 io.on("connect_error", (err) => {
