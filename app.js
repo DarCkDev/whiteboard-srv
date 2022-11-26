@@ -1,9 +1,11 @@
 require("dotenv").config();
+require("./db");
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
+const Canvas = require("./models/canvas");
 
-const port = process.env.PORT | 3001;
+const port = 3003;
 const app = express();
 const server = http.createServer(app);
 const io = require("socket.io")(server, {
@@ -14,20 +16,15 @@ let users = [];
 
 app.use(cors({ origin: "http://localhost:3000", optionsSuccessStatus: 200 }));
 
-app.get("/", (req, res) => {
-  //res.sendFile(__dirname + "/index.html");
+app.post("/save", async (req, res) => {
+  const { room, content } = req.body;
+  const canvas = await Canvas.findOne({room: room}).exec();
+  if (!canvas){
+    const newCanvas = new Canvas({room, content});
+    await newCanvas.save();
+  }
 });
 
-/*io.on("connection", onConnection);
-function onConnection(socket) {
-  socket.on("access", (args) => {
-    users.push({ id: socket.id, ...args });
-    console.log(args);
-  });
-  socket.on("todraw", (data) => {
-    socket.broadcast.emit("todraw", data);
-  });
-}*/
 io.on("connection", onConnection);
 
 function onConnection(socket) {
@@ -40,7 +37,6 @@ function onConnection(socket) {
     socket.on("todraw", (data) => {
       socket.to(args.room).emit("todraw", data);
     });
-    console.log("Connected", args, socket.id);
   });
 
   socket.on("disconnect", () => {
