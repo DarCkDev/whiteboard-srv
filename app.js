@@ -15,13 +15,30 @@ const io = require("socket.io")(server, {
 let users = [];
 
 app.use(cors({ origin: "http://localhost:3000", optionsSuccessStatus: 200 }));
+app.use(express.json());
 
-app.post("/save", async (req, res) => {
+app.put("/save", async (req, res) => {
   const { room, content } = req.body;
-  const canvas = await Canvas.findOne({room: room}).exec();
-  if (!canvas){
-    const newCanvas = new Canvas({room, content});
-    await newCanvas.save();
+  //const canvas = await Canvas.findOne({ room: room }).exec();
+  const canvas = await Canvas.findOneAndUpdate(
+    { room: room },
+    { content: content }
+  ).exec();
+  return res.status(200).json({ canvas });
+});
+
+app.get("/canvas/:room", async (req, res) => {
+  const { room } = req.params;
+  let canvas = await Canvas.findOne({ room: room });
+  if (canvas) {
+    return res
+      .status(200)
+      .json({ id: canvas.id, room: canvas.room, content: canvas.content });
+  } else {
+    canvas = new Canvas({ room: room, content: "" });
+    console.log(canvas.id);
+    await canvas.save();
+    return res.status(201).json({ room: room, content: canvas.content });
   }
 });
 
