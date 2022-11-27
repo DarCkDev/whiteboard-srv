@@ -19,7 +19,6 @@ app.use(express.json());
 
 app.put("/save", async (req, res) => {
   const { room, content } = req.body;
-  //const canvas = await Canvas.findOne({ room: room }).exec();
   const canvas = await Canvas.findOneAndUpdate(
     { room: room },
     { content: content }
